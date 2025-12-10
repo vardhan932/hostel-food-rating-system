@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ratings Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: #f4f4f4;
+            font-family: Arial;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #673ab7;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            padding: 20px;
+        }
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            height: 450px;   /* square size */
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Food Review Dashboard</h2>
+
+<div class="chart-grid">
+    <div class="chart-box">
+        <canvas id="barChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <canvas id="pieChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <canvas id="lineChart"></canvas>
+    </div>
+    
+</div>
+<div class="total11"></div>
+  <button onclick="window.location.href='index.html'">go to form page</button>
+
+<script>
+async function loadData() {
+    const res = await fetch("http://localhost:3000/get-responses");
+    const data = await res.json();
+    document.querySelector(".total11").innerHTML = 
+    "Total Responses: <br>" + data.length;
+
+    let totals = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0 };
+
+    data.forEach(row => {
+        totals.monday += ratingToNumber(row.monday);
+        totals.tuesday += ratingToNumber(row.tuesday);
+        totals.wednesday += ratingToNumber(row.wednesday);
+        totals.thursday += ratingToNumber(row.thursday);
+        totals.friday += ratingToNumber(row.friday);
+        totals.saturday += ratingToNumber(row.saturday);
+        totals.sunday += ratingToNumber(row.sunday);
+    });
+
+    drawBarChart(totals);
+    drawPieChart(totals);
+    drawLineChart(totals);
+}
+
+function ratingToNumber(r) {
+    switch (r) {
+        case "Worst": return 1;
+        case "Average": return 2;
+        case "Above Average": return 3;
+        case "Good": return 4;
+        case "Excellent": return 5;
+        default: return 0;
+    }
+}
+
+function drawBarChart(totals) {
+    new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [{
+                label: "Total Ratings",
+                data: Object.values(totals),
+                backgroundColor: ["#ff4d4d", "#ffa64d", "#ffff4d", "#4dff4d", "#4dd2ff", "#b84dff", "#ff4da6"]
+            }]
+        }
+    });
+}
+
+function drawPieChart(totals) {
+    new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [{
+                data: Object.values(totals),
+                backgroundColor: ["#ff4d4d", "#ffa64d", "#ffff4d", "#4dff4d", "#4dd2ff", "#b84dff", "#ff4da6"]
+            }]
+        }
+    });
+}
+
+function drawLineChart(totals) {
+    new Chart(document.getElementById("lineChart"), {
+        type: "line",
+        data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [{
+                label: "Rating Trend",
+                data: Object.values(totals),
+                borderColor: "#673ab7",
+                borderWidth: 3,
+                fill: false
+            }]
+        }
+    });
+}
+
+loadData();
+</script>
+
+</body>
+</html>

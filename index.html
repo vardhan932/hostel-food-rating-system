@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weekly Rating Form</title>
+
+<style>
+    body {
+        font-family: 'Google Sans', Arial, sans-serif;
+        background: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        padding: 50px;
+    }
+
+    .form-container {
+        width: 650px;
+        background: white;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+        animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+        font-size: 28px;
+        color: #3f51b5;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .day-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        background: #fafafa;
+        border: 1px solid #ddd;
+        transition: 0.3s ease;
+    }
+
+    .day-group:hover {
+        background: #f5f5ff;
+        border-color: #3f51b5;
+    }
+
+    label.day-title {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    /* Radio button styling */
+    .options label {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .options label:hover {
+        color: #3f51b5;
+    }
+
+    .options input[type="radio"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #3f51b5;
+        border-radius: 50%;
+        margin-right: 12px;
+        position: relative;
+        cursor: pointer;
+        transition: 0.2s ease-in-out;
+    }
+
+    .options input[type="radio"]:checked {
+        background: #3f51b5;
+        box-shadow: 0 0 0 4px rgba(63,81,181,0.2);
+    }
+
+    button {
+        width: 100%;
+        background: #3f51b5;
+        color: white;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        margin-top: 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #2c3aa8;
+    }
+
+    .dashboard-btn {
+        margin-top: 10px;
+        background: #4caf50;
+    }
+
+    .dashboard-btn:hover {
+        background: #3c8d3f;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="form-container">
+    <h2>Weekly Rating Form</h2>
+
+    <form id="ratingForm">
+
+        <!-- NAME -->
+        <div class="day-group">
+            <label class="day-title">Your Name</label>
+            <input type="text" id="name" name="name" required 
+                   style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; font-size:16px;">
+        </div>
+
+        <!-- DAYS RADIO BUTTONS -->
+       
+
+        <div id="daysContainer"></div>
+
+        <button type="submit">Submit</button>
+        <button type="button" class="dashboard-btn"
+                onclick="window.location.href='dashboard.html'">
+            View Dashboard
+        </button>
+    </form>
+</div>
+
+<script>
+// Dynamically create Google-form style day sections
+const daysContainer = document.getElementById("daysContainer");
+const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const ratings = ["Worst","Average","Above Average","Good","Excellent"];
+
+days.forEach(day => {
+    let html = `
+        <div class="day-group">
+            <label class="day-title">${day}</label>
+            <div class="options">
+                ${ratings.map(r =>
+                    `<label><input type="radio" name="${day.toLowerCase()}" value="${r}" required>${r}</label>`
+                ).join("")}
+            </div>
+        </div>
+    `;
+    daysContainer.innerHTML += html;
+});
+
+// Handle form submit
+document.getElementById('ratingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch("http://localhost:3000/root1", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        alert(await res.text());
+        e.target.reset();
+    } catch (err) {
+        console.error(err);
+        alert("Failed to submit!");
+    }
+});
+</script>
+
+</body>
+</html>
