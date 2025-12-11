@@ -1,133 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Ratings Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<title>Food Review Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+  }
 
-    <style>
-        body {
-            background: #f4f4f4;
-            font-family: Arial;
-            padding: 20px;
-        }
-        h2 {
-            text-align: center;
-            color: #673ab7;
-        }
-        .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 25px;
-            padding: 20px;
-        }
-        .chart-box {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            height: 450px;   /* square size */
-        }
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-    </style>
+  h2 {
+    text-align: center;
+    color: #673ab7;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  }
+
+  .total-info {
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #673ab7;
+    margin-bottom: 30px;
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+  }
+
+  .chart-box {
+    background: linear-gradient(135deg, #ffffff, #f9f9f9);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .chart-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.25);
+  }
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  button {
+    display: block;
+    margin: 30px auto;
+    background: #673ab7;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background: #532c91;
+  }
+</style>
 </head>
 <body>
 
 <h2>Food Review Dashboard</h2>
+<div class="total-info" id="totalInfo">Total Responses: 0</div>
 
 <div class="chart-grid">
-    <div class="chart-box">
-        <canvas id="barChart"></canvas>
-    </div>
-    <div class="chart-box">
-        <canvas id="pieChart"></canvas>
-    </div>
-    <div class="chart-box">
-        <canvas id="lineChart"></canvas>
-    </div>
-    
+  <div class="chart-box"><canvas id="barChart"></canvas></div>
+  <div class="chart-box"><canvas id="pieChart"></canvas></div>
+  <div class="chart-box"><canvas id="lineChart"></canvas></div>
 </div>
-<div class="total11"></div>
-  <button onclick="window.location.href='index.html'">go to form page</button>
+
+<button onclick="window.location.href='index.html'">Back to Form</button>
 
 <script>
+let barChartInstance = null;
+let pieChartInstance = null;
+let lineChartInstance = null;
+
 async function loadData() {
+  try {
     const res = await fetch("http://localhost:3000/get-responses");
     const data = await res.json();
-    document.querySelector(".total11").innerHTML = 
-    "Total Responses: <br>" + data.length;
 
-    let totals = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0 };
+    document.getElementById("totalInfo").innerHTML =
+      `Total Responses: ${data.length}`;
+
+    const totals = {
+      monday: 0, tuesday: 0, wednesday: 0,
+      thursday: 0, friday: 0, saturday: 0, sunday: 0
+    };
+
+    const counts = { Worst:0, Average:0, "Above Average":0, Good:0, Excellent:0 };
 
     data.forEach(row => {
-        totals.monday += ratingToNumber(row.monday);
-        totals.tuesday += ratingToNumber(row.tuesday);
-        totals.wednesday += ratingToNumber(row.wednesday);
-        totals.thursday += ratingToNumber(row.thursday);
-        totals.friday += ratingToNumber(row.friday);
-        totals.saturday += ratingToNumber(row.saturday);
-        totals.sunday += ratingToNumber(row.sunday);
+      totals.monday += ratingToNumber(row.monday); counts[row.monday]++;
+      totals.tuesday += ratingToNumber(row.tuesday); counts[row.tuesday]++;
+      totals.wednesday += ratingToNumber(row.wednesday); counts[row.wednesday]++;
+      totals.thursday += ratingToNumber(row.thursday); counts[row.thursday]++;
+      totals.friday += ratingToNumber(row.friday); counts[row.friday]++;
+      totals.saturday += ratingToNumber(row.saturday); counts[row.saturday]++;
+      totals.sunday += ratingToNumber(row.sunday); counts[row.sunday]++;
     });
 
     drawBarChart(totals);
-    drawPieChart(totals);
+    drawPieChart(counts);
     drawLineChart(totals);
+
+  } catch (err) {
+    console.error("Error fetching data:", err);
+  }
 }
 
 function ratingToNumber(r) {
-    switch (r) {
-        case "Worst": return 1;
-        case "Average": return 2;
-        case "Above Average": return 3;
-        case "Good": return 4;
-        case "Excellent": return 5;
-        default: return 0;
-    }
+  switch (r) {
+    case "Worst": return 1;
+    case "Average": return 2;
+    case "Above Average": return 3;
+    case "Good": return 4;
+    case "Excellent": return 5;
+    default: return 0;
+  }
 }
 
 function drawBarChart(totals) {
-    new Chart(document.getElementById("barChart"), {
-        type: "bar",
-        data: {
-            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            datasets: [{
-                label: "Total Ratings",
-                data: Object.values(totals),
-                backgroundColor: ["#ff4d4d", "#ffa64d", "#ffff4d", "#4dff4d", "#4dd2ff", "#b84dff", "#ff4da6"]
-            }]
-        }
-    });
+  if (barChartInstance) barChartInstance.destroy();
+
+  barChartInstance = new Chart(document.getElementById("barChart"), {
+    type: "bar",
+    data: {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      datasets: [{
+        label: "Total Ratings",
+        data: Object.values(totals),
+        backgroundColor: ["#ff4d4d","#ffa64d","#ffff4d","#4dff4d","#4dd2ff","#b84dff","#ff4da6"],
+        borderRadius: 8
+      }]
+    },
+    options: {
+      animation: { duration: 1500, easing: 'easeOutBounce' },
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
 }
 
-function drawPieChart(totals) {
-    new Chart(document.getElementById("pieChart"), {
-        type: "pie",
-        data: {
-            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            datasets: [{
-                data: Object.values(totals),
-                backgroundColor: ["#ff4d4d", "#ffa64d", "#ffff4d", "#4dff4d", "#4dd2ff", "#b84dff", "#ff4da6"]
-            }]
-        }
-    });
+function drawPieChart(counts) {
+  if (pieChartInstance) pieChartInstance.destroy();
+
+  pieChartInstance = new Chart(document.getElementById("pieChart"), {
+    type: "pie",
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ["#ff4d4d","#ffa64d","#ffff4d","#4dff4d","#4dd2ff"]
+      }]
+    },
+    options: {
+      animation: { animateScale: true, animateRotate: true },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
 }
 
 function drawLineChart(totals) {
-    new Chart(document.getElementById("lineChart"), {
-        type: "line",
-        data: {
-            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-            datasets: [{
-                label: "Rating Trend",
-                data: Object.values(totals),
-                borderColor: "#673ab7",
-                borderWidth: 3,
-                fill: false
-            }]
-        }
-    });
+  if (lineChartInstance) lineChartInstance.destroy();
+
+  lineChartInstance = new Chart(document.getElementById("lineChart"), {
+    type: "line",
+    data: {
+      labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      datasets: [{
+        label: "Rating Trend",
+        data: Object.values(totals),
+        borderColor: "#673ab7",
+        borderWidth: 3,
+        fill: true,
+        backgroundColor: "rgba(103,58,183,0.2)",
+        tension: 0.4,
+        pointRadius: 6,
+        pointHoverRadius: 10,
+        pointBackgroundColor: "#673ab7"
+      }]
+    },
+    options: {
+      animation: { duration: 1200, easing: 'easeInOutQuart' },
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
 }
 
 loadData();
